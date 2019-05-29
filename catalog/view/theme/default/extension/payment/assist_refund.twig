@@ -1,0 +1,58 @@
+<form action="{{ action }}" method="post" id="checkout">
+<INPUT TYPE="HIDDEN" NAME="Merchant_ID" VALUE="{{ merchant_url.client_id }}">
+<INPUT TYPE="HIDDEN" NAME="OrderNumber" VALUE="{{ merchant_url.order_id }}"> 
+<INPUT TYPE="HIDDEN" NAME="Delay" VALUE="0">
+<INPUT TYPE="HIDDEN" NAME="URL_RETURN" VALUE="{{ merchant_url.url1 }}">
+<INPUT TYPE="HIDDEN" NAME="URL_RETURN_OK" VALUE="{{ merchant_url.url2 }}">
+<INPUT TYPE="HIDDEN" NAME="URL_RETURN_NO" VALUE="{{ merchant_url.url3 }}">
+<INPUT TYPE="HIDDEN" NAME="OrderAmount" VALUE="{{ merchant_url.syma }}">
+<INPUT TYPE="HIDDEN" NAME="OrderCurrency" VALUE="{{ merchant_url.currency_code }}"> 
+<INPUT TYPE="HIDDEN" NAME="FirstName" VALUE="{{ merchant_url.firstname }}"> 
+<INPUT TYPE="HIDDEN" NAME="LastName" VALUE="{{ merchant_url.lastname }}"> 
+<INPUT TYPE="HIDDEN" NAME="Email" VALUE="{{ merchant_url.email }}"> 
+<INPUT TYPE="HIDDEN" NAME="OrderComment" VALUE="{{ merchant_url.comment }}">
+{% if cardpayment %}
+    <INPUT TYPE="HIDDEN" NAME="CardPayment" VALUE="1">
+{% else %}
+    <INPUT TYPE="HIDDEN" NAME="CardPayment" VALUE="0">
+{% endif %}
+{% if ympayment %}
+    <INPUT TYPE="HIDDEN" NAME="YMPayment" VALUE="1">
+{% else %}
+    <INPUT TYPE="HIDDEN" NAME="YMPayment" VALUE="0">
+{% endif %}
+{% if wmpayment %}
+    <INPUT TYPE="HIDDEN" NAME="WMPayment" VALUE="1">
+{% else %}
+    <INPUT TYPE="HIDDEN" NAME="WMPayment" VALUE="0">
+{% endif %}
+{% if qiwipayment %}
+    <INPUT TYPE="HIDDEN" NAME="QIWIPayment" VALUE="1">
+{% else %}
+    <INPUT TYPE="HIDDEN" NAME="QIWIPayment" VALUE="0">
+{% endif %}
+</form>
+<div class="buttons">
+  <div class="pull-right">
+    <input type="button" value="{{ button_confirm }}" id="button-confirm" class="btn btn-primary" data-loading-text="{{ text_loading }}" />
+  </div>
+</div>
+<script type="text/javascript"><!--
+$('#button-confirm').on('click', function() {
+	$.ajax({
+		type: 'get',
+		url: 'index.php?route=extension/payment/assist/confirm',
+	    cache: false,
+		beforeSend: function() {
+			$('#button-confirm').button('loading');
+		},
+		complete: function() {
+			$('#button-confirm').button('reset');
+		},
+		success: function() {
+			$('#checkout').submit();
+			
+		}
+	});
+});
+//--></script>
