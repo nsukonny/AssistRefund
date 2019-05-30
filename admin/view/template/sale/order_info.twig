@@ -3,8 +3,8 @@
     <div class="page-header">
         <div class="container-fluid">
             <div class="pull-right">
-                {% if payment_assist_refund_status and payment_code == 'assist' %}
-                    <a href="{{ assist_refund_url }}" target="_blank" data-toggle="tooltip"
+                {% if can_refund %}
+                    <a href="{{ assist_refund_url }}" data-toggle="tooltip"
                        title="{{ text_assist_refund }}" class="btn btn-danger"><i class="fa fa-money"></i></a>
                 {% endif %} <a href="{{ invoice }}" target="_blank" data-toggle="tooltip"
                                title="{{ button_invoice_print }}" class="btn btn-info"><i class="fa fa-print"></i></a>

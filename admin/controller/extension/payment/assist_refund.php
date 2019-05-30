@@ -87,7 +87,55 @@ class ControllerExtensionPaymentAssistRefund extends Controller {
 		$this->load->model( 'sale/order' );
 		$data['order_info'] = $this->model_sale_order->getOrder( $order_id );
 
+		$data['can_refund'] = $data['order_info']['payment_code'] == 'assist'
+		                      && $data['order_info']['order_status_id'] == $this->config->get( 'payment_assist_order_status_id' )
+		                      && strtotime( $data['order_info']['date_added'] . ' + ' . $this->config->get( 'payment_assist_refund_lifetime' ) . ' hours' ) > time();
+
+		if ( $data['can_refund'] === false ) {
+			$this->session->data['error'] = 'Страница оплаты больше не доступна';
+			$this->response->redirect( $this->url->link( 'sale/order/info', 'user_token=' . $this->session->data['user_token'] . '&order_id=' . $order_id, true ) );
+
+			return;
+		}
+
 		$this->load->model( 'setting/setting' );
+
+		if ( isset( $this->request->post['sendform'] ) ) {
+			$ch   = curl_init();
+			$post = [
+				'BillNumber'  => isset( $data['order_info']['payment_custom_field']['billnumber'] )
+					? $data['order_info']['payment_custom_field']['billnumber'] : 0,
+				'Amount'      => round( $data['order_info']['total'] ),
+				'Merchant_ID' => $this->config->get( 'payment_assist_refund_merchant_id' ),
+				'Login'       => $this->config->get( 'payment_assist_refund_login' ),
+				'Password'    => $this->config->get( 'payment_assist_refund_password' ),
+				'Currency'    => 'RUB',
+				'Language'    => 'RU',
+			];
+
+			curl_setopt( $ch, CURLOPT_URL, $this->config->get( 'payment_assist_refund_url' ) );
+			curl_setopt( $ch, CURLOPT_POST, 1 );
+			curl_setopt( $ch, CURLOPT_RETURNTRANSFER, true );
+			curl_setopt( $ch, CURLOPT_POSTFIELDS, $post );
+
+			$response = curl_exec( $ch );
+
+			curl_close( $ch );
+
+			$response = $this->splitResponse( $response );
+			if ( $response['responsecode'] == 'AS000' ) {
+				$this->load->model( 'extension/payment/assist_refund' );
+				$this->model_extension_payment_assist_refund->addOrderHistory( $order_id, $this->config->get( 'payment_assist_refund_status' ), 'Администратор вернул деньги пользователю из системы Assist.ru' );
+				$this->session->data['success'] = "Заявка на возврат оплаты создана.";
+			} else {
+				$this->session->data['error'] = "Возникла ошибка при возврате оплаты. Обратитесь в поддержку.";
+			}
+
+			$this->response->redirect( $this->url->link( 'sale/order/info', 'user_token=' . $this->session->data['user_token'] . '&order_id=' . $order_id, true ) );
+
+			return;
+		}
+
 		$data['payment_assist_start_order_status_id'] = $this->config->get( 'payment_assist_start_order_status_id' );
 		$data['payment_assist_refund_status']         = $this->config->get( 'payment_assist_refund_status' );
 		$data['payment_assist_refund_merchant_id']    = $this->config->get( 'payment_assist_refund_merchant_id' );
@@ -114,5 +162,26 @@ class ControllerExtensionPaymentAssistRefund extends Controller {
 		$data['footer']      = $this->load->controller( 'common/footer' );
 
 		$this->response->setOutput( $this->load->view( 'extension/payment/assist_refund_form', $data ) );
+	}
+
+	/**
+	 * Split response to array
+	 *
+	 * @param $response
+	 *
+	 * @return array
+	 */
+	private function splitResponse( $response ) {
+		$arr = [];
+
+		$keys = explode( ';', $response );
+		foreach ( $keys as $key ) {
+			$val = explode( ':', $key );
+			if ( count( $val ) !== 0 && ! empty( $val[1] ) ) {
+				$arr[ $val[0] ] = isset( $val[1] ) ? $val[1] : '';
+			}
+		}
+
+		return $arr;
 	}
 }
