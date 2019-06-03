@@ -343,6 +343,7 @@ class ControllerAccountOrder extends Controller {
 			/**
 			 * Changes from Assist refund
 			 */
+			date_default_timezone_set('Europe/Moscow');
 			$spawn_time   = strtotime( $order_info['date_added'] . ' + ' . $this->config->get( 'payment_assist_refund_spawntime' ) . ' hours' );
 			$current_time = time();
 
@@ -446,6 +447,7 @@ class ControllerAccountOrder extends Controller {
 		$this->load->model( 'account/order' );
 		$order_info = $this->model_account_order->getOrder( $order_id );
 
+		date_default_timezone_set('Europe/Moscow');
 		$spawn_time   = strtotime( $order_info['date_added'] . ' + ' . $this->config->get( 'payment_assist_refund_spawntime' ) . ' hours' );
 		$current_time = time();
 

@@ -89,6 +89,7 @@ class ControllerExtensionPaymentAssistRefund extends Controller {
 		$this->load->model( 'sale/order' );
 		$data['order_info'] = $this->model_sale_order->getOrder( $order_id );
 
+		date_default_timezone_set('Europe/Moscow');
 		$spawn_time = strtotime($data['order_info']['date_added'] . ' + ' . $this->config->get( 'payment_assist_refund_spawntime' ) . ' hour');
 		$current_time = time();
 

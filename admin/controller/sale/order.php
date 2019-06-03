@@ -1254,6 +1254,7 @@ class ControllerSaleOrder extends Controller {
 			$data['assist_refund_url'] = $this->url->link('extension/payment/assist_refund/refund', 'user_token=' . $this->session->data['user_token'] . '&order_id=' . $this->request->get['order_id'], true);
 			$data['text_assist_refund'] = $this->language->get( 'text_assist_refund' );
 
+			date_default_timezone_set('Europe/Moscow');
 			$spawn_time = strtotime($order_info['date_added'] . ' + ' . $this->config->get( 'payment_assist_refund_spawntime' ) . ' hours');
 			$current_time = time();
 
