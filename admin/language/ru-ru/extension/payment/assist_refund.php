@@ -14,4 +14,5 @@ $_['entry_login']            = 'Логин Assist';
 $_['entry_merchant_id']      = 'MerchantId';
 $_['entry_url']              = 'Cancel URL';
 $_['entry_return']           = 'Оформить возврат';
-$_['entry_status_return']           = 'Статус заказа после успешного возврата';
+$_['entry_status_return']    = 'Статус заказа после успешного возврата';
+$_['entry_spawntime']        = 'Время, по истечению которого появится ссылка (час)';

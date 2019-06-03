@@ -343,9 +343,13 @@ class ControllerAccountOrder extends Controller {
 			/**
 			 * Changes from Assist refund
 			 */
+			$spawn_time   = strtotime( $order_info['date_added'] . ' + ' . $this->config->get( 'payment_assist_refund_spawntime' ) . ' hours' );
+			$current_time = time();
+
 			$data['can_refund'] = $order_info['payment_code'] == 'assist'
 			                      && $order_info['order_status_id'] == $this->config->get( 'payment_assist_order_status_id' )
-			                      && strtotime( $order_info['date_added'] . ' + ' . $this->config->get( 'payment_assist_refund_lifetime' ) . ' hours' ) > time();
+			                      && $current_time > $spawn_time
+			                      && $current_time < strtotime( $spawn_time . ' + ' . $this->config->get( 'payment_assist_refund_lifetime' ) . ' hours' );
 			$data['refund_url'] = $this->url->link( 'account/order/refund', 'order_id=' . $this->request->get['order_id'], true );
 			/**
 			 * End of changes
@@ -440,11 +444,15 @@ class ControllerAccountOrder extends Controller {
 		}
 
 		$this->load->model( 'account/order' );
-		$order_info    = $this->model_account_order->getOrder( $order_id );
+		$order_info = $this->model_account_order->getOrder( $order_id );
+
+		$spawn_time   = strtotime( $order_info['date_added'] . ' + ' . $this->config->get( 'payment_assist_refund_spawntime' ) . ' hours' );
+		$current_time = time();
 
 		$data['can_refund'] = $order_info['payment_code'] == 'assist'
 		                      && $order_info['order_status_id'] == $this->config->get( 'payment_assist_order_status_id' )
-		                      && strtotime( $order_info['date_added'] . ' + ' . $this->config->get( 'payment_assist_refund_lifetime' ) . ' hours' ) > time();
+		                      && $current_time > $spawn_time
+		                      && $current_time < strtotime( $spawn_time . ' + ' . $this->config->get( 'payment_assist_refund_lifetime' ) . ' hours' );
 
 		if ( $data['can_refund'] === false ) {
 			$this->session->data['error'] = 'Страница оплаты больше не доступна';

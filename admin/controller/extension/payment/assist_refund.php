@@ -42,12 +42,14 @@ class ControllerExtensionPaymentAssistRefund extends Controller {
 		$data['payment_assist_refund_login']       = isset( $this->request->post['payment_assist_refund_login'] ) ? $this->request->post['payment_assist_refund_login'] : $this->config->get( 'payment_assist_refund_login' );
 		$data['payment_assist_refund_password']    = isset( $this->request->post['payment_assist_refund_password'] ) ? $this->request->post['payment_assist_refund_password'] : $this->config->get( 'payment_assist_refund_password' );
 		$data['payment_assist_refund_lifetime']    = isset( $this->request->post['payment_assist_refund_lifetime'] ) ? $this->request->post['payment_assist_refund_lifetime'] : $this->config->get( 'payment_assist_refund_lifetime' );
+		$data['payment_assist_refund_spawntime']   = isset( $this->request->post['payment_assist_refund_spawntime'] ) ? $this->request->post['payment_assist_refund_spawntime'] : $this->config->get( 'payment_assist_refund_spawntime' );
 		$data['payment_assist_refund_url']         = isset( $this->request->post['payment_assist_refund_url'] ) ? $this->request->post['payment_assist_refund_url'] : $this->config->get( 'payment_assist_refund_url' );
 		$data['payment_assist_refund_status']      = isset( $this->request->post['payment_assist_refund_status'] ) ? $this->request->post['payment_assist_refund_status'] : $this->config->get( 'payment_assist_refund_status' );
 
 		$data['error_warning'] = isset( $this->error['warning'] ) ? $this->error['warning'] : '';
 
 		$data['entry_1']             = $this->language->get( 'entry_1' );
+		$data['entry_spawntime']     = $this->language->get( 'entry_spawntime' );
 		$data['entry_merchant_id']   = $this->language->get( 'entry_merchant_id' );
 		$data['entry_login']         = $this->language->get( 'entry_login' );
 		$data['entry_password']      = $this->language->get( 'entry_password' );
@@ -87,9 +89,13 @@ class ControllerExtensionPaymentAssistRefund extends Controller {
 		$this->load->model( 'sale/order' );
 		$data['order_info'] = $this->model_sale_order->getOrder( $order_id );
 
+		$spawn_time = strtotime($data['order_info']['date_added'] . ' + ' . $this->config->get( 'payment_assist_refund_spawntime' ) . ' hour');
+		$current_time = time();
+
 		$data['can_refund'] = $data['order_info']['payment_code'] == 'assist'
 		                      && $data['order_info']['order_status_id'] == $this->config->get( 'payment_assist_order_status_id' )
-		                      && strtotime( $data['order_info']['date_added'] . ' + ' . $this->config->get( 'payment_assist_refund_lifetime' ) . ' hours' ) > time();
+		                      && $current_time > $spawn_time
+		                      && $current_time < strtotime( $spawn_time . ' + ' . $this->config->get( 'payment_assist_refund_lifetime' ) . ' hours' );
 
 		if ( $data['can_refund'] === false ) {
 			$this->session->data['error'] = 'Страница оплаты больше не доступна';
