@@ -1,0 +1,62 @@
+{{ header }}
+<div class="container">
+    <div class="row">
+        <div id="account-order">
+            <ul class="breadcrumb">
+                {% for breadcrumb in breadcrumbs %}
+                    <li><a href="{{ breadcrumb.href }}">{{ breadcrumb.text }}</a></li>
+                {% endfor %}
+            </ul>
+            {% if success %}
+                <div class="alert alert-success alert-dismissible"><i class="fa fa-check-circle"></i> {{ success }}
+                    <button type="button" class="close" data-dismiss="alert">&times;</button>
+                </div>
+            {% endif %}
+            {% if error_warning %}
+                <div class="alert alert-danger alert-dismissible"><i
+                            class="fa fa-exclamation-circle"></i> {{ error_warning }}
+                    <button type="button" class="close" data-dismiss="alert">&times;</button>
+                </div>
+            {% endif %}
+            {{ column_left }}
+            {% if column_left and column_right %}
+                {% set class = 'col-sm-6' %}
+            {% elseif column_left or column_right %}
+                {% set class = 'col-sm-9' %}
+            {% else %}
+                {% set class = 'col-sm-12' %}
+            {% endif %}
+            <div id="content" class="{{ class }}">{{ content_top }}
+                <h2>{{ heading_title }}</h2>
+
+                <table class="table table-bordered table-hover">
+                    <thead>
+                    <tr>
+                        <td class="text-left" colspan="2">{{ text_order_detail }}</td>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr>
+                        <td class="text-left" style="width: 50%;">Номер заказа#</td>
+                        <td class="text-left" style="width: 50%;">{{ order_id }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-left" style="width: 50%;">Сумма возврата</td>
+                        <td class="text-left" style="width: 50%;">{{ order_total }} руб</td>
+                    </tr>
+                    </tbody>
+                </table>
+
+                <form action="" method="post" enctype="multipart/form-data" >
+                    <div class="buttons clearfix">
+                        <div class="pull-right">
+                            <input type="hidden" value="1" name="sendform" >
+                            <input type="submit" value="Продолжить" class="btn btn-primary"/>
+                        </div>
+                    </div>
+                </form>
+                {{ content_bottom }}</div>
+            {{ column_right }}</div>
+        {{ footer }}
+    </div>
+</div>
