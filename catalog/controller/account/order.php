@@ -343,13 +343,16 @@ class ControllerAccountOrder extends Controller {
 			/**
 			 * Changes from Assist refund
 			 */
-			date_default_timezone_set('Europe/Moscow');
-			$current_time = time();
+			date_default_timezone_set( 'Europe/Moscow' );
+			$current_day = date( 'mdY' );
 
 			$data['can_refund'] = $order_info['payment_code'] == 'assist'
 			                      && $order_info['order_status_id'] == $this->config->get( 'payment_assist_order_status_id' )
-			                      && $current_time < strtotime(' + ' . $this->config->get( 'payment_assist_refund_lifetime' ) . ' hours' );
+			                      && $current_day == date( 'mdY', strtotime( ' + ' . $this->config->get( 'payment_assist_refund_lifetime' ) . ' hours' ) );
+			$data['can_return'] = $data['can_refund'] === false;
+
 			$data['refund_url'] = $this->url->link( 'account/order/refund', 'order_id=' . $this->request->get['order_id'], true );
+			$data['return_url'] = $this->url->link( 'account/return/add', 'order_id=' . $this->request->get['order_id'], true );
 			/**
 			 * End of changes
 			 */
@@ -435,6 +438,7 @@ class ControllerAccountOrder extends Controller {
 	 */
 	public function refund() {
 		$this->load->language( 'account/order' );
+		$this->load->language( 'extension/payment/assist_refund' );
 
 		if ( isset( $this->request->get['order_id'] ) ) {
 			$order_id = $this->request->get['order_id'];
@@ -445,15 +449,15 @@ class ControllerAccountOrder extends Controller {
 		$this->load->model( 'account/order' );
 		$order_info = $this->model_account_order->getOrder( $order_id );
 
-		date_default_timezone_set('Europe/Moscow');
-		$current_time = time();
+		date_default_timezone_set( 'Europe/Moscow' );
+		$current_day = date( 'mdY' );
 
 		$data['can_refund'] = $order_info['payment_code'] == 'assist'
 		                      && $order_info['order_status_id'] == $this->config->get( 'payment_assist_order_status_id' )
-		                      && $current_time < strtotime(' + ' . $this->config->get( 'payment_assist_refund_lifetime' ) . ' hours' );
+		                      && $current_day == date( 'mdY', strtotime( ' + ' . $this->config->get( 'payment_assist_refund_lifetime' ) . ' hours' ) );
 
 		if ( $data['can_refund'] === false ) {
-			$this->session->data['error'] = 'Страница оплаты больше не доступна';
+			$this->session->data['error'] = $this->language->get( 'assist_page_error' );
 			$this->response->redirect( $this->url->link( 'account/order/info', 'order_id=' . $order_id ) );
 
 			return;
@@ -483,9 +487,9 @@ class ControllerAccountOrder extends Controller {
 			'href' => $this->url->link( 'account/order/info', 'order_id=' . $order_id . $url, true )
 		);
 
-		$this->document->setTitle( 'Возврат средств' );
+		$this->document->setTitle( $this->language->get( 'assist_return_heading_title' ) );
 
-		$data['heading_title'] = 'Возврат средств';
+		$data['heading_title'] = $this->language->get( 'assist_return_heading_title' );
 
 		if ( isset( $this->request->post['sendform'] ) ) {
 			$ch   = curl_init();
@@ -513,9 +517,9 @@ class ControllerAccountOrder extends Controller {
 			if ( $response['responsecode'] == 'AS000' ) {
 				$this->load->model( 'checkout/order' );
 				$this->model_checkout_order->addOrderHistory( $order_id, $this->config->get( 'payment_assist_refund_status' ), 'Пользователь запросил возврат средств по заказу' );
-				$this->session->data['success'] = "Заявка на возврат оплаты принята.";
+				$this->session->data['success'] = $this->language->get( 'assist_return_success' );
 			} else {
-				$this->session->data['error'] = "Возникла ошибка при возврате оплаты. Обратитесь в поддержку.";
+				$this->session->data['error'] = $this->language->get( 'assist_return_error' );
 			}
 
 			$this->response->redirect( $this->url->link( 'account/order/info', 'order_id=' . $order_id ) );
