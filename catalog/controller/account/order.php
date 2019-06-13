@@ -344,12 +344,13 @@ class ControllerAccountOrder extends Controller {
 			 * Changes from Assist refund
 			 */
 			date_default_timezone_set( 'Europe/Moscow' );
-			$current_day = date( 'mdY' );
 
 			$data['can_refund'] = $order_info['payment_code'] == 'assist'
 			                      && $order_info['order_status_id'] == $this->config->get( 'payment_assist_order_status_id' )
-			                      && $current_day == date( 'mdY', strtotime( ' + ' . $this->config->get( 'payment_assist_refund_lifetime' ) . ' hours' ) );
-			$data['can_return'] = $data['can_refund'] === false;
+			                      && date( 'mdY' ) == date( 'mdY', strtotime( $order_info['date_added'] ) );
+
+			$data['can_return'] = $data['can_refund'] === false
+			                      && ! in_array( $order_info['order_status_id'], [ 7, 9, 13, 8, 14, 10, 11, 16 ] );
 
 			$data['refund_url'] = $this->url->link( 'account/order/refund', 'order_id=' . $this->request->get['order_id'], true );
 			$data['return_url'] = $this->url->link( 'account/return/add', 'order_id=' . $this->request->get['order_id'], true );
@@ -450,15 +451,14 @@ class ControllerAccountOrder extends Controller {
 		$order_info = $this->model_account_order->getOrder( $order_id );
 
 		date_default_timezone_set( 'Europe/Moscow' );
-		$current_day = date( 'mdY' );
 
 		$data['can_refund'] = $order_info['payment_code'] == 'assist'
 		                      && $order_info['order_status_id'] == $this->config->get( 'payment_assist_order_status_id' )
-		                      && $current_day == date( 'mdY', strtotime( ' + ' . $this->config->get( 'payment_assist_refund_lifetime' ) . ' hours' ) );
+		                      && date( 'mdY' ) == date( 'mdY', strtotime( $order_info['date_added'] ) );
 
 		if ( $data['can_refund'] === false ) {
 			$this->session->data['error'] = $this->language->get( 'assist_page_error' );
-			$this->response->redirect( $this->url->link( 'account/order/info', 'order_id=' . $order_id ) );
+			$this->response->redirect( $this->url->link( 'account / order / info', 'order_id = ' . $order_id ) );
 
 			return;
 		}
@@ -469,22 +469,22 @@ class ControllerAccountOrder extends Controller {
 
 		$data['breadcrumbs'][] = array(
 			'text' => $this->language->get( 'text_home' ),
-			'href' => $this->url->link( 'common/home' )
+			'href' => $this->url->link( 'common / home' )
 		);
 
 		$data['breadcrumbs'][] = array(
 			'text' => $this->language->get( 'text_account' ),
-			'href' => $this->url->link( 'account/account', '', true )
+			'href' => $this->url->link( 'account / account', '', true )
 		);
 
 		$data['breadcrumbs'][] = array(
 			'text' => $this->language->get( 'heading_title' ),
-			'href' => $this->url->link( 'account/order', $url, true )
+			'href' => $this->url->link( 'account / order', $url, true )
 		);
 
 		$data['breadcrumbs'][] = array(
 			'text' => $this->language->get( 'text_order' ),
-			'href' => $this->url->link( 'account/order/info', 'order_id=' . $order_id . $url, true )
+			'href' => $this->url->link( 'account / order / info', 'order_id = ' . $order_id . $url, true )
 		);
 
 		$this->document->setTitle( $this->language->get( 'assist_return_heading_title' ) );
@@ -512,17 +512,19 @@ class ControllerAccountOrder extends Controller {
 			$response = curl_exec( $ch );
 
 			curl_close( $ch );
-
 			$response = $this->splitResponse( $response );
+
 			if ( $response['responsecode'] == 'AS000' ) {
-				$this->load->model( 'checkout/order' );
+				$this->load->model( 'checkout / order' );
 				$this->model_checkout_order->addOrderHistory( $order_id, $this->config->get( 'payment_assist_refund_status' ), 'Пользователь запросил возврат средств по заказу' );
+				$message = "№ заказа: " . $order_info['order_id'] . " <br>Дата заказа: " . $order_info['date_added'] . " <br>Заказ отменен. <br>Если у Вас есть какие-либо вопросы, ответьте на это сообщение.";
+				$this->sendNotification( $this->config, $this->customer->getEmail(), $message );
 				$this->session->data['success'] = $this->language->get( 'assist_return_success' );
 			} else {
 				$this->session->data['error'] = $this->language->get( 'assist_return_error' );
 			}
 
-			$this->response->redirect( $this->url->link( 'account/order/info', 'order_id=' . $order_id ) );
+			$this->response->redirect( $this->url->link( 'account / order / info', 'order_id = ' . $order_id ) );
 
 			return;
 		}
@@ -530,14 +532,14 @@ class ControllerAccountOrder extends Controller {
 		$data['order_id']    = $this->request->get['order_id'];
 		$data['order_total'] = round( $order_info['total'] );
 
-		$data['column_left']    = $this->load->controller( 'common/column_left' );
-		$data['column_right']   = $this->load->controller( 'common/column_right' );
-		$data['content_top']    = $this->load->controller( 'common/content_top' );
-		$data['content_bottom'] = $this->load->controller( 'common/content_bottom' );
-		$data['footer']         = $this->load->controller( 'common/footer' );
-		$data['header']         = $this->load->controller( 'common/header' );
+		$data['column_left']    = $this->load->controller( 'common / column_left' );
+		$data['column_right']   = $this->load->controller( 'common / column_right' );
+		$data['content_top']    = $this->load->controller( 'common / content_top' );
+		$data['content_bottom'] = $this->load->controller( 'common / content_bottom' );
+		$data['footer']         = $this->load->controller( 'common / footer' );
+		$data['header']         = $this->load->controller( 'common / header' );
 
-		$this->response->setOutput( $this->load->view( 'account/order_refund', $data ) );
+		$this->response->setOutput( $this->load->view( 'account / order_refund', $data ) );
 	}
 
 	/**
@@ -555,5 +557,24 @@ class ControllerAccountOrder extends Controller {
 		}
 
 		return $arr;
+	}
+
+	private function sendNotification( $config, $to, $html ) {
+		$mail = new Mail();
+
+		$mail->protocol  = $config->get( 'config_mail_protocol' );
+		$mail->parameter = $config->get( 'config_mail_parameter' );
+		$mail->hostname  = $config->get( 'config_smtp_host' );
+		$mail->username  = $config->get( 'config_smtp_username' );
+		$mail->password  = $config->get( 'config_smtp_password' );
+		$mail->port      = $config->get( 'config_smtp_port' );
+		$mail->timeout   = $config->get( 'config_smtp_timeout' );
+		$mail->setTo( $to );
+		$mail->setFrom( $config->get( 'config_email' ) );
+		$mail->setSender( $config->get( 'config_email' ) );
+		$mail->setSubject( $config->get( 'config_name' ) );
+		$mail->setHtml( $html );
+
+		$mail->send();
 	}
 }

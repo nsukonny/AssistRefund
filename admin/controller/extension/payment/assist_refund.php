@@ -41,7 +41,6 @@ class ControllerExtensionPaymentAssistRefund extends Controller {
 		$data['payment_assist_refund_merchant_id'] = isset( $this->request->post['payment_assist_refund_merchant_id'] ) ? $this->request->post['payment_assist_refund_merchant_id'] : $this->config->get( 'payment_assist_refund_merchant_id' );
 		$data['payment_assist_refund_login']       = isset( $this->request->post['payment_assist_refund_login'] ) ? $this->request->post['payment_assist_refund_login'] : $this->config->get( 'payment_assist_refund_login' );
 		$data['payment_assist_refund_password']    = isset( $this->request->post['payment_assist_refund_password'] ) ? $this->request->post['payment_assist_refund_password'] : $this->config->get( 'payment_assist_refund_password' );
-		$data['payment_assist_refund_lifetime']    = isset( $this->request->post['payment_assist_refund_lifetime'] ) ? $this->request->post['payment_assist_refund_lifetime'] : $this->config->get( 'payment_assist_refund_lifetime' );
 		$data['payment_assist_refund_url']         = isset( $this->request->post['payment_assist_refund_url'] ) ? $this->request->post['payment_assist_refund_url'] : $this->config->get( 'payment_assist_refund_url' );
 		$data['payment_assist_refund_status']      = isset( $this->request->post['payment_assist_refund_status'] ) ? $this->request->post['payment_assist_refund_status'] : $this->config->get( 'payment_assist_refund_status' );
 
@@ -67,11 +66,6 @@ class ControllerExtensionPaymentAssistRefund extends Controller {
 	protected function validate() {
 		if ( ! $this->user->hasPermission( 'modify', 'extension/payment/assist_refund' ) ) {
 			$this->error['warning'] = $this->language->get( 'error_permission' );
-		}
-
-		if ( ! $this->request->post['payment_assist_refund_lifetime']
-		     || ! is_numeric( $this->request->post['payment_assist_refund_lifetime'] ) ) {
-			$this->error['warning'] = $this->language->get( 'error_lifetime' );
 		}
 
 		return ! $this->error;
@@ -139,7 +133,6 @@ class ControllerExtensionPaymentAssistRefund extends Controller {
 		$data['payment_assist_refund_merchant_id']    = $this->config->get( 'payment_assist_refund_merchant_id' );
 		$data['payment_assist_refund_login']          = $this->config->get( 'payment_assist_refund_login' );
 		$data['payment_assist_refund_password']       = $this->config->get( 'payment_assist_refund_password' );
-		$data['payment_assist_refund_lifetime']       = $this->config->get( 'payment_assist_refund_lifetime' );
 		$data['payment_assist_refund_url']            = $this->config->get( 'payment_assist_refund_url' );
 
 		$this->load->language( 'extension/payment/assist_refund' );
