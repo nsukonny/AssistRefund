@@ -40,10 +40,12 @@
                         <td class="text-left" style="width: 50%;">Номер заказа#</td>
                         <td class="text-left" style="width: 50%;">{{ order_id }}</td>
                     </tr>
+                    {% if is_assist %}
                     <tr>
                         <td class="text-left" style="width: 50%;">Сумма возврата</td>
                         <td class="text-left" style="width: 50%;">{{ order_total }} руб</td>
                     </tr>
+                    {% endif %}
                     </tbody>
                 </table>
 

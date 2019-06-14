@@ -72,7 +72,7 @@ class ControllerAccountOrder extends Controller {
 
 		$data['pagination'] = $pagination->render();
 
-		$data['results'] = sprintf( $this->language->get( 'text_pagination' ), ( $order_total ) ? ( ( $page - 1 ) * 10 ) + 1 : 0, ( ( ( $page - 1 ) * 10 ) > ( $order_total - 10 ) ) ? $order_total : ( ( ( $page - 1 ) * 10 ) + 10 ), $order_total, ceil( $order_total / 10 ) );
+		$data['results'] = sprintf( $this->language->get( 'text_pagination' ), ( $order_total ) ? ( ( $page - 1 ) * 10 ) + 1 : 0, ( ( ( $page - 1 ) * 10 ) > ( $order_total - 10 ) ) ? $order_total : ( ( ( $page - 1 ) * 10 ) + 10 ), $order_total, ceil( $order_total/10 ) );
 
 		$data['continue'] = $this->url->link( 'account/account', '', true );
 
@@ -345,14 +345,13 @@ class ControllerAccountOrder extends Controller {
 			 */
 			date_default_timezone_set( 'Europe/Moscow' );
 
-			$data['can_refund'] = $order_info['payment_code'] == 'assist'
-			                      && $order_info['order_status_id'] == $this->config->get( 'payment_assist_order_status_id' )
+			$data['can_refund'] = $order_info['order_status_id'] == $this->config->get( 'payment_assist_order_status_id' )
 			                      && date( 'mdY' ) == date( 'mdY', strtotime( $order_info['date_added'] ) );
 
 			$data['can_return'] = $data['can_refund'] === false
-			                      && ! in_array( $order_info['order_status_id'], [ 7, 9, 13, 8, 14, 10, 11, 16 ] );
+			                      && ! in_array( $order_info['order_status_id'], [ 7, 9, 13, 8, 14, 10, 11, 16 ]);
 
-			$data['refund_url'] = $this->url->link( 'account/order/refund', 'order_id=' . $this->request->get['order_id'], true );
+			$data['refund_url'] = $this->url->link( 'account/order/cancel', 'order_id=' . $this->request->get['order_id'], true );
 			$data['return_url'] = $this->url->link( 'account/return/add', 'order_id=' . $this->request->get['order_id'], true );
 			/**
 			 * End of changes
@@ -437,7 +436,7 @@ class ControllerAccountOrder extends Controller {
 	/**
 	 * Method from Assist refund module
 	 */
-	public function refund() {
+	public function cancel() {
 		$this->load->language( 'account/order' );
 		$this->load->language( 'extension/payment/assist_refund' );
 
@@ -452,16 +451,9 @@ class ControllerAccountOrder extends Controller {
 
 		date_default_timezone_set( 'Europe/Moscow' );
 
-		$data['can_refund'] = $order_info['payment_code'] == 'assist'
+		$data['is_assist'] = $order_info['payment_method'] == 'ASSIST - провайдер электронных платежей'
 		                      && $order_info['order_status_id'] == $this->config->get( 'payment_assist_order_status_id' )
 		                      && date( 'mdY' ) == date( 'mdY', strtotime( $order_info['date_added'] ) );
-
-		if ( $data['can_refund'] === false ) {
-			$this->session->data['error'] = $this->language->get( 'assist_page_error' );
-			$this->response->redirect( $this->url->link( 'account / order / info', 'order_id = ' . $order_id ) );
-
-			return;
-		}
 
 		$url = '';
 
@@ -469,29 +461,29 @@ class ControllerAccountOrder extends Controller {
 
 		$data['breadcrumbs'][] = array(
 			'text' => $this->language->get( 'text_home' ),
-			'href' => $this->url->link( 'common / home' )
+			'href' => $this->url->link( 'common/home' )
 		);
 
 		$data['breadcrumbs'][] = array(
 			'text' => $this->language->get( 'text_account' ),
-			'href' => $this->url->link( 'account / account', '', true )
+			'href' => $this->url->link( 'account/account', '', true )
 		);
 
 		$data['breadcrumbs'][] = array(
 			'text' => $this->language->get( 'heading_title' ),
-			'href' => $this->url->link( 'account / order', $url, true )
+			'href' => $this->url->link( 'account/order', $url, true )
 		);
 
 		$data['breadcrumbs'][] = array(
 			'text' => $this->language->get( 'text_order' ),
-			'href' => $this->url->link( 'account / order / info', 'order_id = ' . $order_id . $url, true )
+			'href' => $this->url->link( 'account/order/info', 'order_id=' . $order_id . $url, true )
 		);
 
 		$this->document->setTitle( $this->language->get( 'assist_return_heading_title' ) );
 
 		$data['heading_title'] = $this->language->get( 'assist_return_heading_title' );
 
-		if ( isset( $this->request->post['sendform'] ) ) {
+		if ( isset( $this->request->post['sendform'] ) && $data['is_assist'] ) {
 			$ch   = curl_init();
 			$post = [
 				'BillNumber'  => isset( $order_info['payment_custom_field']['billnumber'] )
@@ -515,7 +507,7 @@ class ControllerAccountOrder extends Controller {
 			$response = $this->splitResponse( $response );
 
 			if ( $response['responsecode'] == 'AS000' ) {
-				$this->load->model( 'checkout / order' );
+				$this->load->model( 'checkout/order' );
 				$this->model_checkout_order->addOrderHistory( $order_id, $this->config->get( 'payment_assist_refund_status' ), 'Пользователь запросил возврат средств по заказу' );
 				$message = "№ заказа: " . $order_info['order_id'] . " <br>Дата заказа: " . $order_info['date_added'] . " <br>Заказ отменен. <br>Если у Вас есть какие-либо вопросы, ответьте на это сообщение.";
 				$this->sendNotification( $this->config, $this->customer->getEmail(), $message );
@@ -524,7 +516,17 @@ class ControllerAccountOrder extends Controller {
 				$this->session->data['error'] = $this->language->get( 'assist_return_error' );
 			}
 
-			$this->response->redirect( $this->url->link( 'account / order / info', 'order_id = ' . $order_id ) );
+			$this->response->redirect( $this->url->link( 'account/order/info', 'order_id=' . $order_id ) );
+
+			return;
+		} elseif (isset( $this->request->post['sendform'] )) {
+			$this->load->model( 'checkout/order' );
+			$this->model_checkout_order->addOrderHistory( $order_id, $this->config->get( 'payment_assist_refund_status' ), 'Пользователь запросил возврат средств по заказу' );
+			$message = "№ заказа: " . $order_info['order_id'] . " <br>Дата заказа: " . $order_info['date_added'] . " <br>Заказ отменен. <br>Если у Вас есть какие-либо вопросы, ответьте на это сообщение.";
+			$this->sendNotification( $this->config, $this->customer->getEmail(), $message );
+			$this->session->data['success'] = $this->language->get( 'cancel_success' );
+
+			$this->response->redirect( $this->url->link( 'account/order/info', 'order_id=' . $order_id ) );
 
 			return;
 		}
@@ -532,14 +534,14 @@ class ControllerAccountOrder extends Controller {
 		$data['order_id']    = $this->request->get['order_id'];
 		$data['order_total'] = round( $order_info['total'] );
 
-		$data['column_left']    = $this->load->controller( 'common / column_left' );
-		$data['column_right']   = $this->load->controller( 'common / column_right' );
-		$data['content_top']    = $this->load->controller( 'common / content_top' );
-		$data['content_bottom'] = $this->load->controller( 'common / content_bottom' );
-		$data['footer']         = $this->load->controller( 'common / footer' );
-		$data['header']         = $this->load->controller( 'common / header' );
+		$data['column_left']    = $this->load->controller( 'common/column_left' );
+		$data['column_right']   = $this->load->controller( 'common/column_right' );
+		$data['content_top']    = $this->load->controller( 'common/content_top' );
+		$data['content_bottom'] = $this->load->controller( 'common/content_bottom' );
+		$data['footer']         = $this->load->controller( 'common/footer' );
+		$data['header']         = $this->load->controller( 'common/header' );
 
-		$this->response->setOutput( $this->load->view( 'account / order_refund', $data ) );
+		$this->response->setOutput( $this->load->view( 'account/order_refund', $data ) );
 	}
 
 	/**
